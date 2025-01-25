@@ -1,2 +1,5 @@
 # Bulk-E-Mail-Dispatcher
-Automating the process of sending multiple E-Mails to multiple recipients at once.
+Open MS Excel and go to the Visual Basic option in the Developer ribbon and embed the code.
+Create the Name, Email ID, Attachments and CC columns in the Sheet1 of the Excel Workbook.
+Input recipient details, including Name, Email ID, and optional CC and Attachments if needed.
+Run the Macro to automate the process.
