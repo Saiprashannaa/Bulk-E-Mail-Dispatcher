@@ -1,0 +1,71 @@
+Sub SendEmails()
+    Dim OutApp As Object
+    Dim OutMail As Object
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    Dim subject As String
+    Dim body As String
+    Dim ccEmail As String
+    Dim name As String
+    Dim emailAddress As String
+    Dim attachments As String
+    Dim fullBody As String
+    
+    ' Set the worksheet
+    Set ws = ThisWorkbook.Sheets("Sheet1")
+    
+    ' Get the last row with data
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+
+    ' Get CC email from cell D2
+    ccEmail = ws.Range("D2").Value
+    
+    ' Prompt for subject
+    subject = InputBox("Enter the email subject", "Email Subject")
+    
+    ' Prompt for body
+    body = InputBox("Enter the email body", "Email Body")
+    
+    ' Create Outlook application object
+    On Error Resume Next
+    Set OutApp = CreateObject("Outlook.Application")
+    On Error GoTo 0
+    
+    If OutApp Is Nothing Then
+        MsgBox "Outlook is not available!", vbExclamation
+        Exit Sub
+    End If
+    
+    ' Loop through each row and send email
+    For i = 2 To lastRow ' Assuming the first row has headers
+        name = ws.Cells(i, 1).Value
+        emailAddress = ws.Cells(i, 2).Value
+        attachments = ws.Cells(i, 3).Value
+        fullBody = "Dear " & name & "," & vbCrLf & vbCrLf & body
+        
+        On Error Resume Next
+        Set OutMail = OutApp.CreateItem(0)
+        With OutMail
+            .To = emailAddress
+            .Subject = subject
+            .Body = fullBody
+            If attachments <> "" Then
+                .Attachments.Add attachments
+            End If
+	    If ccEmail <> “” Then
+		 .CC = ccEmail
+	    End If
+            .Send
+        End With
+        On Error GoTo 0
+        
+        ' Clean up
+        Set OutMail = Nothing
+    Next i
+    
+    ' Close Outlook application object
+    Set OutApp = Nothing
+    
+    MsgBox "Emails have been sent!", vbInformation
+End Sub
