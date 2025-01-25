@@ -1,0 +1,114 @@
+VBA Macro for Mac
+
+Sub SendEmails()
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    Dim subject As String
+    Dim body As String
+    Dim ccEmail As String
+    Dim name As String
+    Dim emailAddress As String
+    Dim attachments As String
+    Dim fullBody As String
+    Dim isMac As Boolean
+    
+    ' Detect if running on Mac
+    #If Mac Then
+        isMac = True
+    #Else
+        isMac = False
+    #End If
+    
+    ' Set the worksheet
+    Set ws = ThisWorkbook.Sheets("Sheet1")
+    
+    ' Get the last row with data
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+
+    ' Get CC email from cell D2
+    ccEmail = ws.Range("D2").Value
+    
+    ' Prompt for subject
+    subject = InputBox("Enter the email subject", "Subject")
+    
+    ' Prompt for body
+    body = InputBox("Enter the email body", "Body")
+    
+    ' Loop through each row and send email
+    For i = 2 To lastRow ' Assuming the first row has headers
+        name = ws.Cells(i, 1).Value
+        emailAddress = ws.Cells(i, 2).Value
+        attachments = ws.Cells(i, 3).Value
+        fullBody = "Dear " & name & "," & vbCrLf & vbCrLf & body
+        
+        If isMac Then
+            ' Send email using AppleScript on Mac
+            SendEmailMac emailAddress, subject, fullBody, attachments, ccEmail
+        Else
+            ' Send email using Outlook on Windows
+            SendEmailWindows emailAddress, subject, fullBody, attachments, ccEmail
+        End If
+    Next i
+    
+    MsgBox "Emails have been sent!", vbInformation
+End Sub
+
+Sub SendEmailWindows(emailAddress As String, subject As String, body As String, attachments As String, ccEmail As String)
+    Dim OutApp As Object
+    Dim OutMail As Object
+    
+    ' Create Outlook application object
+    On Error Resume Next
+    Set OutApp = CreateObject("Outlook.Application")
+    On Error GoTo 0
+    
+    If OutApp Is Nothing Then
+        MsgBox "Outlook is not available!", vbExclamation
+        Exit Sub
+    End If
+    
+    On Error Resume Next
+    Set OutMail = OutApp.CreateItem(0)
+    With OutMail
+        .To = emailAddress
+        .subject = subject
+        .body = body
+        If attachments <> "" Then
+            .attachments.Add attachments
+        End If
+        If ccEmail <> "" Then
+            .CC = ccEmail
+        End If
+        .Send
+    End With
+    On Error GoTo 0
+    
+    ' Clean up
+    Set OutMail = Nothing
+    Set OutApp = Nothing
+End Sub
+
+Sub SendEmailMac(emailAddress As String, subject As String, body As String, attachments As String, ccEmail As String)
+    Dim script As String
+    
+    script = "tell application ""Microsoft Outlook""" & vbCrLf & _
+             "set newMessage to make new outgoing message with properties {subject:""" & subject & """, content:""" & body & """}" & vbCrLf & _
+             "tell newMessage" & vbCrLf & _
+             "make new recipient with properties {email address:{address:""" & emailAddress & """}}" & vbCrLf
+    
+    If ccEmail <> "" Then
+        script = script & "make new cc recipient with properties {email address:{address:""" & ccEmail & """}}" & vbCrLf
+    End If
+    
+    If attachments <> "" Then
+        script = script & "make new attachment with properties {file:""" & attachments & """}" & vbCrLf
+    End If
+    
+    script = script & "send" & vbCrLf & _
+                     "end tell" & vbCrLf & _
+                     "end tell"
+    
+    ' Execute the AppleScript
+    MacScript (script)
+End Sub
